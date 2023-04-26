@@ -45,10 +45,12 @@ class Q1APIImplementation(Q1API):
         return result
 
     def hourly_project_settlement(self, start_time: datetime, end_time: datetime,
-                                  settlement_location: str) -> pd.Series:
+                                  settlement_location: str):
         result = self.filter(start_time, end_time, settlement_location)
         result['Hourly Project Settlement'] = result['Settlement Point Price'] * result['generation']
-        return result['Hourly Project Settlement']
+        result = result[['datetime', 'Hourly Project Settlement']]
+        result.reset_index(drop=True, inplace=True)
+        return result
 
     def average_monthly_values(self, start_time: datetime, end_time: datetime,
                                settlement_location: str) -> pd.DataFrame:
