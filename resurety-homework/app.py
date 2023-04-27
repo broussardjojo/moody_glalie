@@ -30,8 +30,26 @@ class HourlyProjectSettlement(Resource):
         return answer.to_json()
 
 class AverageMonthlyValues(Resource):
-    ...
+    get_args = {
+        'start_time': fields.DateTime(
+            format="timestamp_ms",
+            required=True
+        ),
+        'end_time': fields.DateTime(
+            format="timestamp_ms",
+            required=True
+        ),
+        'settlement_location': fields.Str(
+            required=True
+        )
+    }
+
+    @use_args(get_args, as_kwargs=True, location="query")
+    def get(self, start_time: datetime.datetime, end_time: datetime.datetime, settlement_location: str):
+        answer = concrete_api.average_monthly_values(start_time, end_time, settlement_location)
+        return answer.to_json()
 
 if __name__ == "__main__":
     api.add_resource(HourlyProjectSettlement, "/hourly_project_settlement")
+    api.add_resource(AverageMonthlyValues, "/average_monthly_values")
     app.run(port=5001, debug=True)

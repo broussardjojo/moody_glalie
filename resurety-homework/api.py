@@ -18,9 +18,20 @@ class Q1APIDataset:
         generation_data['datetime'] = pd.to_datetime(generation_data['time'])
         generation_data = generation_data[['datetime', 'generation']]
 
-        power_prices['datetime'] = pd.to_datetime(
-            power_prices['Delivery Date'].astype(str) + " " + power_prices['Delivery Hour'].astype(int).astype(
-                str) + ":00:00")
+        # I was confused about that "delivery interval" field - what's that about?
+        # It turns out that instead of using a normal timestamp, datetime records are instead broken into
+        # - Date (self explanatory)
+        # - Delivery hour (mostly self explanatory, but there's some 24s in here which I just assumed mapped to 12:00am)
+        # - Delivery Interval - after doing more research on some Ercot data, these are used to represent 15 minute intervals in an hour
+
+        # Because I discovered this after a decent amount of work was put into the API, this is just a patch fix.
+        # Instead of this I could have simply filtered out duplicates of location and datetime, leaving me with only a
+        # single interval per hour.
+        # But I didn't do that for some reason. This transformation is super slow because I didn't know how to think
+        # about it in any way other than as a lambda function, which doesn't take advantage of pandas optimization.
+        power_prices['datetime'] = power_prices.apply(lambda entry: f"{entry['Delivery Date']} {str(int(entry['Delivery Hour'])).zfill(2)}:{str(int(15 * (entry['Delivery Interval'] - 1))).zfill(2)}:00",
+                                                      axis=1)
+        power_prices['datetime'] = pd.to_datetime(power_prices['datetime'], format="%m/%d/%Y %H:%M:%S")
 
         self.data = generation_data.merge(power_prices, left_on="datetime", right_on="datetime")
 
@@ -46,21 +57,29 @@ class Q1APIImplementation(Q1API):
 
     def hourly_project_settlement(self, start_time: datetime, end_time: datetime,
                                   settlement_location: str):
-        result = self.filter(start_time, end_time, settlement_location)
-        result['Hourly Project Settlement'] = result['Settlement Point Price'] * result['generation']
-        result = result[['datetime', 'Hourly Project Settlement']]
-        result.reset_index(drop=True, inplace=True)
-        return result
+        data = self.filter(start_time, end_time, settlement_location)
+        return Q1APIImplementation.__get_hourly_project_settlement_from_filtered_dataframe(data)
+
+    @classmethod
+    def __get_hourly_project_settlement_from_filtered_dataframe(cls, data: pd.DataFrame):
+        data['Hourly Project Settlement'] = data['Settlement Point Price'] * data['generation']
+        data = data[['datetime', 'Hourly Project Settlement']]
+        data.reset_index(drop=True, inplace=True)
+        return data
 
     def average_monthly_values(self, start_time: datetime, end_time: datetime,
                                settlement_location: str) -> pd.DataFrame:
-        result = self.filter(start_time, end_time, settlement_location)
-        # TODO: This is duplicated unnecessary filtering
-        result['settlement'] = self.hourly_project_settlement(start_time, end_time, settlement_location)
-        result['month'] = result['datetime'].dt.month
-        result['year'] = result['datetime'].dt.year
-        result = result[['month', 'year', 'settlement', 'Settlement Point Price', 'generation']]
-        return result.groupby(['year', 'month']).mean()
+        data = self.filter(start_time, end_time, settlement_location)
+        return Q1APIImplementation.__get_average_monthly_values_from_filtered_dataframe(data)
+
+    @classmethod
+    def __get_average_monthly_values_from_filtered_dataframe(cls, data: pd.DataFrame):
+        settlement_df = Q1APIImplementation.__get_hourly_project_settlement_from_filtered_dataframe(data)
+        data = data.merge(settlement_df, left_on="datetime", right_on="datetime")
+        data['month'] = data['datetime'].dt.month
+        data['year'] = data['datetime'].dt.year
+        data = data[['month', 'year', 'Hourly Project Settlement', 'Settlement Point Price', 'generation']]
+        return data.groupby(['year', 'month']).mean()
 
 
 power_prices = pd.read_parquet("../data/power_prices_data.gzip")
