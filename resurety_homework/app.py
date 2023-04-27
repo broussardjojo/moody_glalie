@@ -4,7 +4,7 @@ from flask import Flask
 from flask_restful import Resource, Api
 from webargs import fields
 from webargs.flaskparser import use_args
-from api import concrete_api
+from resurety_homework.api import concrete_api
 
 app = Flask(__name__)
 api = Api(app)
@@ -49,7 +49,11 @@ class AverageMonthlyValues(Resource):
         answer = concrete_api.average_monthly_values(start_time, end_time, settlement_location)
         return answer.to_json()
 
-if __name__ == "__main__":
+
+def add_resources():
     api.add_resource(HourlyProjectSettlement, "/hourly_project_settlement")
     api.add_resource(AverageMonthlyValues, "/average_monthly_values")
+
+if __name__ == "__main__":
+    add_resources()
     app.run(port=5001, debug=True)
