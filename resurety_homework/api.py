@@ -36,6 +36,7 @@ class Q1APIDataset:
         self.data = generation_data.merge(power_prices, left_on="datetime", right_on="datetime")
         self.data = self.data.drop_duplicates(subset=['datetime', 'Settlement Point Name'])
 
+
 @dataclass
 class Q1API(ABC):
     dataset: Q1APIDataset
@@ -85,10 +86,14 @@ class Q1APIImplementation(Q1API):
         data = data[['month', 'year', 'Hourly Project Settlement_x', 'Settlement Point Price', 'generation']]
         return data.groupby(['year', 'month']).mean()
 
+
 try:
-    power_prices = pd.read_parquet("../data/power_prices_data.gzip")
-    modeled_generation = pd.read_csv("../data/windGenTS.csv")
+    # These paths are relative to the repo root, so calling pytest should be done from there
+    power_prices = pd.read_parquet("./data/power_prices_data.gzip")
+    modeled_generation = pd.read_csv("./data/windGenTS.csv")
 except FileNotFoundError:
+    # This is a makeshift way of loading the files in the docker container.
+    # This could be rewritten to use relative paths, etc...
     power_prices = pd.read_parquet("/app/data/power_prices_data.gzip")
     modeled_generation = pd.read_csv("/app/data/windGenTS.csv")
 api_data = Q1APIDataset(power_prices, modeled_generation)
