@@ -1,7 +1,7 @@
 import pytest
 from flask import url_for
 
-from resurety_homework.app import add_resources, app
+from moody_glalie.app import add_resources, app
 
 
 # tests to make sure both web api methods give 200 responses

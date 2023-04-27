@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from resurety_homework.api import concrete_api
+from moody_glalie.api import concrete_api
 from datetime import datetime
 
 # Guaranteeing that the answer is correct and unchanging may not be in the scope of unit tests.

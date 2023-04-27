@@ -6,4 +6,4 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 ENV PYTHONPATH "${PYTHONPATH}:/usr/src/app"
 EXPOSE 5001
-CMD ["python", "resurety_homework/app_for_container.py"]
+CMD ["python", "moody_glalie/app_for_container.py"]
