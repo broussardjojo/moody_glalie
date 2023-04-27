@@ -85,9 +85,11 @@ class Q1APIImplementation(Q1API):
         data = data[['month', 'year', 'Hourly Project Settlement_x', 'Settlement Point Price', 'generation']]
         return data.groupby(['year', 'month']).mean()
 
-
-power_prices = pd.read_parquet("../data/power_prices_data.gzip")
-modeled_generation = pd.read_csv("../data/windGenTS.csv")
-
+try:
+    power_prices = pd.read_parquet("../data/power_prices_data.gzip")
+    modeled_generation = pd.read_csv("../data/windGenTS.csv")
+except FileNotFoundError:
+    power_prices = pd.read_parquet("/app/data/power_prices_data.gzip")
+    modeled_generation = pd.read_csv("/app/data/windGenTS.csv")
 api_data = Q1APIDataset(power_prices, modeled_generation)
 concrete_api = Q1APIImplementation(api_data)

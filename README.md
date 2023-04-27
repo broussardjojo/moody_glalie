@@ -1,0 +1,3 @@
+- build docker image with `docker build -t resurety-hw .`
+- Start docker container with `docker run --rm -it -p 5001:5001/tcp resurety-hw:latest`; wait for console output giving debugger pin
+- Send get request to `localhost:5001` with postman
