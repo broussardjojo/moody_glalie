@@ -2,8 +2,8 @@ import datetime
 
 from flask import Flask
 from flask_restful import Resource, Api
-from webargs import fields, validate
-from webargs.flaskparser import use_args, parser
+from webargs import fields
+from webargs.flaskparser import use_args
 from api import concrete_api
 
 app = Flask(__name__)
